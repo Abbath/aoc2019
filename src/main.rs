@@ -105,7 +105,124 @@ fn day_02() {
         }
     }
 }
+
+fn day_03() {
+    let file = File::open("input/input_03.txt").unwrap();
+    let reader = BufReader::new(file);
+
+    #[derive(Debug, Clone, Copy)]
+    enum Dir {
+        U,
+        D,
+        L,
+        R,
+    }
+    #[derive(Debug, Clone, Copy)]
+    struct Segment {
+        start: (i64, i64),
+        dir: Dir,
+        len: i64,
+    }
+
+    impl Segment {
+        fn end(self) -> (i64, i64) {
+            match self.dir {
+                Dir::U => (self.start.0, self.start.1 + self.len),
+                Dir::D => (self.start.0, self.start.1 - self.len),
+                Dir::L => (self.start.0 - self.len, self.start.1),
+                Dir::R => (self.start.0 + self.len, self.start.1),
+            }
+        }
+    }
+
+    fn check(x1: i64, y1: i64, _x2: i64, y2: i64, x3: i64, y3: i64, x4: i64) -> bool {
+        y1 <= y3 && y2 >= y3 && x3 <= x1 && x4 >= x1
+            || y2 <= y3 && y1 >= y3 && x3 <= x1 && x4 >= x1
+            || y1 <= y3 && y2 >= y3 && x4 <= x1 && x3 >= x1
+            || y2 <= y3 && y1 >= y3 && x4 <= x1 && x3 >= x1
+    }
+
+    fn intersect(s1: &Segment, s2: &Segment) -> Option<(i64, i64)> {
+        match (s1.dir, s2.dir) {
+            (Dir::U, Dir::L) | (Dir::U, Dir::R) | (Dir::D, Dir::L) | (Dir::D, Dir::R) => {
+                let e1 = s1.end();
+                let e2 = s2.end();
+                if check(
+                    s1.start.0, s1.start.1, e1.0, e1.1, s2.start.0, s2.start.1, e2.0,
+                ) {
+                    Some((s1.start.0, s2.start.1))
+                } else {
+                    None
+                }
+            }
+            (Dir::L, Dir::U) | (Dir::R, Dir::U) | (Dir::L, Dir::D) | (Dir::R, Dir::D) => {
+                let e1 = s1.end();
+                let e2 = s2.end();
+                if check(
+                    s2.start.0, s2.start.1, e2.0, e2.1, s1.start.0, s1.start.1, e1.0,
+                ) {
+                    Some((s2.start.0, s1.start.1))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    let circuits: Vec<Vec<Segment>> = reader
+        .lines()
+        .map_while(Result::ok)
+        .map(|l| {
+            let mut start = (0, 0);
+            l.trim()
+                .split(",")
+                .map(|x| {
+                    let d = match x.chars().next().unwrap() {
+                        'U' => Dir::U,
+                        'D' => Dir::D,
+                        'L' => Dir::L,
+                        'R' => Dir::R,
+                        _ => panic!("Wrong direction!"),
+                    };
+                    let l = x
+                        .chars()
+                        .skip(1)
+                        .collect::<String>()
+                        .parse::<i64>()
+                        .unwrap();
+                    let s = Segment {
+                        start,
+                        dir: d,
+                        len: l,
+                    };
+                    start = match d {
+                        Dir::U => (start.0, start.1 + l),
+                        Dir::D => (start.0, start.1 - l),
+                        Dir::L => (start.0 - l, start.1),
+                        Dir::R => (start.0 + l, start.1),
+                    };
+                    s
+                })
+                .collect()
+        })
+        .collect();
+    let intersection: i64 = circuits[0]
+        .iter()
+        .flat_map(|s1| {
+            circuits[1]
+                .iter()
+                .filter_map(|s2| intersect(s1, s2))
+                .collect::<Vec<(i64, i64)>>()
+        })
+        .map(|(x, y)| x.abs() + y.abs())
+        .min()
+        .unwrap();
+    println!("{:?}", intersection);
+}
+
 fn main() {
     day_01();
     day_02();
+    day_03();
 }
