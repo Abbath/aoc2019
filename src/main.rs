@@ -252,8 +252,30 @@ fn day_03() {
     println!("{res1} {res2}");
 }
 
+fn day_04() {
+    let start = 273025;
+    let end = 767253;
+    let (res1, res2): (i32, i32) = (start..end)
+        .map(|x| {
+            let s = x.to_string().chars().collect::<Vec<char>>();
+            let mut s2 = s.clone();
+            let mut s3 = s.clone();
+            s2.sort();
+            s3.dedup();
+            let s4 = s.chunk_by(|a, b| a == b).any(|x| x.len() == 2);
+            if s2 == s && s3.len() < s.len() {
+                (1, if s4 { 1 } else { 0 })
+            } else {
+                (0, 0)
+            }
+        })
+        .fold((0, 0), |(a1, a2), (x1, x2)| (a1 + x1, a2 + x2));
+    println!("{res1} {res2}");
+}
+
 fn main() {
     day_01();
     day_02();
     day_03();
+    day_04();
 }
